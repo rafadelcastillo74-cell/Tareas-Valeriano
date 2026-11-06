@@ -1,1 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Tareas / Менеджер завдань</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 12px;
+      
+      --tag-limpieza: #dbeafe;
+      --tag-limpieza-text: #1e40af;
+      --tag-pintura: #fef3c7;
+      --tag-pintura-text: #92400e;
+      --tag-mantenimiento: #dcfce7;
+      --tag-mantenimiento-text: #166534;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .lang-select-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--card-bg);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    button.btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: var(--card-bg);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .tab-btn.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .badge-count {
+      background-color: rgba(0,0,0,0.1);
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+
+    .tab-btn.active .badge-count {
+      background-color: rgba(255,255,255,0.25);
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      gap: 12px;
+    }
+
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .task-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .task-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .task-tags {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .tag {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .tag-limpieza { background: var(--tag-limpieza); color: var(--tag-limpieza-text); }
+    .tag-pintura { background: var(--tag-pintura); color: var(--tag-pintura-text); }
+    .tag-mantenimiento { background: var(--tag-mantenimiento); color: var(--tag-mantenimiento-text); }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px;
+      border-radius: 4px;
+      line-height: 1;
+    }
+
+    .btn-delete:hover {
+      background-color: #fee2e2;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 data-i18n="app_title">Gestor de Tareas</h1>
+    <div class="lang-select-wrapper">
+      <select id="lang-selector" onchange="setLanguage(this.value)">
+        <option value="es">🇪🇸 Español</option>
+        <option value="uk">🇺🇦 Українська</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="card">
+    <form id="task-form" class="form-group" onsubmit="handleAddTask(event)">
+      <div class="input-row">
+        <input type="text" id="task-input" data-i18n-placeholder="input_placeholder" placeholder="Añadir nueva tarea..." required>
+        <select id="day-select">
+          <option value="lunes" data-i18n="day_lunes">Lunes</option>
+          <option value="martes" data-i18n="day_martes">Martes</option>
+          <option value="miercoles" data-i18n="day_miercoles">Miércoles</option>
+          <option value="jueves" data-i18n="day_jueves">Jueves</option>
+          <option value="viernes" data-i18n="day_viernes">Viernes</option>
+        </select>
+        <select id="cat-select">
+          <option value="limpieza" data-i18n="cat_limpieza">Limpieza</option>
+          <option value="pintura" data-i18n="cat_pintura">Pintura</option>
+          <option value="mantenimiento" data-i18n="cat_mantenimiento">Mantenimiento</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary" data-i18n="btn_add">Añadir Tarea</button>
+    </form>
+  </section>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="setActiveDay('lunes')" id="tab-lunes">
+      <span data-i18n="day_lunes">Lunes</span>
+      <span class="badge-count" id="count-lunes">0</span>
+    </button>
+    <button class="tab-btn" onclick="setActiveDay('martes')" id="tab-martes">
+      <span data-i18n="day_martes">Martes</span>
+      <span class="badge-count" id="count-martes">0</span>
+    </button>
+    <button class="tab-btn" onclick="setActiveDay('miercoles')" id="tab-miercoles">
+      <span data-i18n="day_miercoles">Miércoles</span>
+      <span class="badge-count" id="count-miercoles">0</span>
+    </button>
+    <button class="tab-btn" onclick="setActiveDay('jueves')" id="tab-jueves">
+      <span data-i18n="day_jueves">Jueves</span>
+      <span class="badge-count" id="count-jueves">0</span>
+    </button>
+    <button class="tab-btn" onclick="setActiveDay('viernes')" id="tab-viernes">
+      <span data-i18n="day_viernes">Viernes</span>
+      <span class="badge-count" id="count-viernes">0</span>
+    </button>
+  </nav>
+
+  <main>
+    <div id="task-list" class="task-list"></div>
+    <div id="empty-state" class="empty-state" style="display: none;" data-i18n="empty_msg">
+      No hay tareas registradas para este día.
+    </div>
+  </main>
+
+  <script>
+    const translations = {
+      es: {
+        app_title: "Gestor de Tareas",
+        input_placeholder: "Añadir nueva tarea...",
+        btn_add: "Añadir Tarea",
+        day_lunes: "Lunes",
+        day_martes: "Martes",
+        day_miercoles: "Miércoles",
+        day_jueves: "Jueves",
+        day_viernes: "Viernes",
+        cat_limpieza: "Limpieza",
+        cat_pintura: "Pintura",
+        cat_mantenimiento: "Mantenimiento",
+        empty_msg: "No hay tareas registradas para este día.",
+        confirm_delete: "¿Deseas eliminar esta tarea?"
+      },
+      uk: {
+        app_title: "Менеджер завдань",
+        input_placeholder: "Додати нове завдання...",
+        btn_add: "Додати завдання",
+        day_lunes: "Понеділок",
+        day_martes: "Вівторок",
+        day_miercoles: "Середа",
+        day_jueves: "Четвер",
+        day_viernes: "П'ятниця",
+        cat_limpieza: "Прибирання",
+        cat_pintura: "Фарбування",
+        cat_mantenimiento: "Обслуговування",
+        empty_msg: "На цей день немає запланованих завдань.",
+        confirm_delete: "Ви бажаєте видалити це завдання?"
+      }
+    };
+
+    const DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+    let currentLang = localStorage.getItem('app_lang') || 'es';
+    let activeDay = 'lunes';
+    let tasks = JSON.parse(localStorage.getItem('app_tasks')) || [
+      { id: '1', title: 'Limpiar cristales', day: 'lunes', category: 'limpieza', completed: false },
+      { id: '2', title: 'Pintar valla exterior', day: 'martes', category: 'pintura', completed: false }
+    ];
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('app_lang', lang);
+      document.documentElement.lang = lang;
+      document.getElementById('lang-selector').value = lang;
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[lang][key]) {
+          el.placeholder = translations[lang][key];
+        }
+      });
+
+      renderTasks();
+    }
+
+    function saveTasks() {
+      localStorage.setItem('app_tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function setActiveDay(day) {
+      activeDay = day;
+      DAYS.forEach(d => {
+        const tab = document.getElementById(`tab-${d}`);
+        if (d === day) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      renderTasks();
+    }
+
+    function handleAddTask(e) {
+      e.preventDefault();
+      const input = document.getElementById('task-input');
+      const day = document.getElementById('day-select').value;
+      const category = document.getElementById('cat-select').value;
+
+      if (!input.value.trim()) return;
+
+      const newTask = {
+        id: Date.now().toString(),
+        title: input.value.trim(),
+        day: day,
+        category: category,
+        completed: false
+      };
+
+      tasks.push(newTask);
+      input.value = '';
+      saveTasks();
+      setActiveDay(day);
+    }
+
+    function toggleTask(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      saveTasks();
+    }
+
+    function deleteTask(id) {
+      if (confirm(translations[currentLang].confirm_delete)) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+      }
+    }
+
+    function updateCounts() {
+      DAYS.forEach(day => {
+        const count = tasks.filter(t => t.day === day && !t.completed).length;
+        document.getElementById(`count-${day}`).textContent = count;
+      });
+    }
+
+    function renderTasks() {
+      updateCounts();
+      const container = document.getElementById('task-list');
+      const emptyState = document.getElementById('empty-state');
+      container.innerHTML = '';
+
+      const dayTasks = tasks.filter(t => t.day === activeDay);
+
+      if (dayTasks.length === 0) {
+        emptyState.style.display = 'block';
+      } else {
+        emptyState.style.display = 'none';
+        dayTasks.forEach(task => {
+          const item = document.createElement('div');
+          item.className = `task-item ${task.completed ? 'completed' : ''}`;
+          
+          const catLabel = translations[currentLang][`cat_${task.category}`];
+          
+          item.innerHTML = `
+            <div class="task-left">
+              <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
+              <span class="task-text">${escapeHtml(task.title)}</span>
+            </div>
+            <div class="task-tags">
+              <span class="tag tag-${task.category}">${catLabel}</span>
+              <button class="btn-delete" onclick="deleteTask('${task.id}')" title="Eliminar">&times;</button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+    }
+
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"']/g, function (s) {
+        return {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[s];
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setLanguage(currentLang);
+    });
+  </script>
+</body>
+</html>
 
